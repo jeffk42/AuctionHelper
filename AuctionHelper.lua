@@ -1,26 +1,26 @@
 -- First, we create a namespace for our addon by declaring a top-level table that will hold everything else.
-AKTTAuction = {}
+AuctionHelper = {}
  
 -- This isn't strictly necessary, but we'll use this string later when registering events.
 -- Better to define it in a single place rather than retyping the same string.
-AKTTAuction.name = "AKTTAuction"
+AuctionHelper.name = "AuctionHelper"
  
 -- Next we create a function that will initialize our addon
-function AKTTAuction:Initialize()
+function AuctionHelper:Initialize()
   -- ...but we don't have anything to initialize yet. We'll come back to this.
-  AKTTAuction.ConsoleCommands()
+  AuctionHelper.ConsoleCommands()
 end
  
 -- Then we create an event handler function which will be called when the "addon loaded" event
 -- occurs. We'll use this to initialize our addon after all of its resources are fully loaded.
-function AKTTAuction.OnAddOnLoaded(event, addonName)
+function AuctionHelper.OnAddOnLoaded(event, addonName)
   -- The event fires each time *any* addon loads - but we only care about when our own addon loads.
-  if addonName == AKTTAuction.name then
-    AKTTAuction:Initialize()
+  if addonName == AuctionHelper.name then
+    AuctionHelper:Initialize()
   end
 end
 
-function AKTTAuction:ConsoleCommands()
+function AuctionHelper:ConsoleCommands()
 
     SLASH_COMMANDS["/auc"] = function(param)
 
@@ -72,4 +72,4 @@ function AKTTAuction:ConsoleCommands()
 end
 
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
-EVENT_MANAGER:RegisterForEvent(AKTTAuction.name, EVENT_ADD_ON_LOADED, AKTTAuction.OnAddOnLoaded)
+EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)

@@ -1,4 +1,4 @@
 ## Title: AKTT Auction Helper
 ## APIVersion: 100031 100032
 
-AKTTAuction.lua
+AuctionHelper.lua
