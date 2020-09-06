@@ -20,6 +20,17 @@ function AuctionHelper.OnAddOnLoaded(event, addonName)
   end
 end
 
+local function handleSoldBid(rawName)
+  StartChatInput(string.format("SOLD to %s for MONEY! Congrats!", rawName))
+end
+
+local function MyShowPlayerContextMenu(playerDatas, rawName)
+  AddCustomMenuItem("Sold To " .. rawName, function() handleSoldBid(rawName) end)
+  ShowMenu()
+end
+
+
+
 function AuctionHelper:ConsoleCommands()
 
     SLASH_COMMANDS["/auc"] = function(param)
@@ -73,3 +84,4 @@ end
 
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)
+SecurePostHook(SharedChatSystem, "ShowPlayerContextMenu", MyShowPlayerContextMenu)
