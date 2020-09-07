@@ -87,7 +87,7 @@ function AuctionHelper:ConsoleCommands()
             d("/a sold [user] [bid]        Print SOLD message")
           elseif command == "lc" then
             if (string.len(user) <= 0) then
-              d('not enough parameters. input ignored.')
+              StartChatInput(string.format("%s is the current top bid, any other bids?", currentBid))
             else
               if (string.len(value) > 0) then
                 estimated = value
