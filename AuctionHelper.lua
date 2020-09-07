@@ -1,5 +1,10 @@
 -- First, we create a namespace for our addon by declaring a top-level table that will hold everything else.
 AuctionHelper = {}
+local AuctionHelperData = {}
+local currentIndex = 0
+local currentBid = ""
+local currentWinner = ""
+local currentEstimate = ""
  
 -- This isn't strictly necessary, but we'll use this string later when registering events.
 -- Better to define it in a single place rather than retyping the same string.
@@ -9,7 +14,7 @@ AuctionHelper.name = "AuctionHelper"
 function AuctionHelper:Initialize()
   -- ...but we don't have anything to initialize yet. We'll come back to this.
   AuctionHelper.ConsoleCommands()
-  ScrollListExampleMainWindow:SetHidden(false)
+  AuctionHelperDataWindow:SetHidden(false)
   -- ScrollListExampleMainWindow:SetText("the message")
 end
  
@@ -23,19 +28,41 @@ function AuctionHelper.OnAddOnLoaded(event, addonName)
 end
 
 local function handleSoldBid(rawName)
-  StartChatInput(string.format("SOLD to %s for MONEY! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", rawName))
+  StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", rawName, currentBid))
+end
+
+local function setCurrentWinner(rawName)
+  currentWinner = rawName
+  d(string.format("-- Current High Bidder set to %s --", rawName))
 end
 
 local function MyShowPlayerContextMenu(playerData, rawName)
+  AddCustomMenuItem("Set Current Winner", function() setCurrentWinner(rawName) end)
   AddCustomMenuItem("Sold To " .. rawName, function() handleSoldBid(rawName) end)
+  
   ShowMenu()
 end
 
-
+function AuctionHelperDataField_OnTextChanged (self)
+  AuctionHelperData = {}
+  s = AuctionHelperDataWindowBody1Field:GetText()
+  for index, title, est, st in string.gmatch( s, "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",\"\$(.-)\",.-[\n]" ) do
+      inum = tonumber(index)
+      AuctionHelperData[inum] = {title="", estimated="", start=""}
+      -- Trim the edges of the title
+      title = string.match(title, "^[%s]*(.-)[%s]*$")
+      -- Reduce extra whitespace
+      title = string.gsub(title, "[ \t]+", " ")
+      AuctionHelperData[inum].title = title
+      AuctionHelperData[inum].estimated = est
+      AuctionHelperData[inum].start = st
+  end
+  
+end
 
 function AuctionHelper:ConsoleCommands()
 
-    SLASH_COMMANDS["/auc"] = function(param)
+    SLASH_COMMANDS["/a"] = function(param)
 
         local argNum = 0
         local value = ""
@@ -53,35 +80,64 @@ function AuctionHelper:ConsoleCommands()
           command = string.lower(command)
           if command == "help" then
             d("-- Auction Helper commands --")
-            d("/auc                  Show or hide the window. <not implemented>")
-            d("/auc call [bid] [estimated]  Print the last call for bids. Estimated value is optional")
-            d("/auc g1 [bid]                 [bid] going once!")
-            d("/auc g2 [bid]                 [bid] going twice!")
-            d("/auc sold [user] [bid]        Print SOLD message")
-          elseif command == "call" then
+            d("/a                  Show or hide the data reader window")
+            d("/a lc [bid] [estimated]  Print the last call for bids. Estimated value is optional")
+            d("/a g1 [bid]                 [bid] going once!")
+            d("/a g2 [bid]                 [bid] going twice!")
+            d("/a sold [user] [bid]        Print SOLD message")
+          elseif command == "lc" then
             if (string.len(user) <= 0) then
-              d("Input ignored, not enough parameters")
+              d('not enough parameters. input ignored.')
             else
               if (string.len(value) > 0) then
                 estimated = value
+                currentEstimate = estimated
               end
               value = user
+              currentBid = value
               if (string.len(estimated) > 0) then
                 StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", value, estimated))
               else
                 StartChatInput(string.format("%s is the current top bid, any other bids?", value))
               end
             end
+          elseif command == "b" then
+            currentBid = user
+            d(string.format("-- Current top bid set to %s --", currentBid));
           elseif command == "g1" then
-            value = user
-            StartChatInput(string.format("%s going once!", value))
+            -- value = user
+            StartChatInput(string.format("%s going once!", currentBid))
           elseif command == "g2" then
             value = user
-            StartChatInput(string.format("%s going twice!", value))
+            StartChatInput(string.format("%s going twice!", currentBid))
           elseif command == "sold" then
-            StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", value))
+            StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", currentWinner, currentBid))
           elseif command == "" then
-            ScrollListExampleMainWindow:SetHidden(false)
+            AuctionHelperDataWindow:SetHidden(false)
+          elseif command == "go" then
+            if (string.len(user) > 0) then
+              if (string.lower(user) == "next") then
+                currentIndex = currentIndex + 1
+              else
+                local newIndex = tonumber(user)
+                if (newIndex > 0) then
+                  currentIndex = newIndex
+                end
+              end
+              if (AuctionHelperData[currentIndex] ~= nil) then
+                d(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
+              else
+                d("reached the end")
+              end
+            end
+          elseif command == "sb" then
+            local bid = ""
+            if (string.len(user) > 0) then
+              bid = user
+            else
+              bid = AuctionHelperData[currentIndex].start
+            end
+            d(string.format("<<< Starting bid for this lot: %s >>>", bid))
           end
     end
 end
@@ -137,3 +193,5 @@ SecurePostHook(SharedChatSystem, "ShowPlayerContextMenu", MyShowPlayerContextMen
   -- end
   
   -- EVENT_MANAGER:RegisterForEvent("SLE_Init", EVENT_ADD_ON_LOADED , SLE.Init)
+
+  
