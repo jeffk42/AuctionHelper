@@ -2,3 +2,4 @@
 ## APIVersion: 100031 100032
 
 AuctionHelper.lua
+AuctionHelperWindow.xml
