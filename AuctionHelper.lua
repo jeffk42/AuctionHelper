@@ -6,16 +6,13 @@ local currentBid = ""
 local currentWinner = ""
 local currentEstimate = ""
  
--- This isn't strictly necessary, but we'll use this string later when registering events.
--- Better to define it in a single place rather than retyping the same string.
+-- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
  
--- Next we create a function that will initialize our addon
+-- Initialize function
 function AuctionHelper:Initialize()
-  -- ...but we don't have anything to initialize yet. We'll come back to this.
   AuctionHelper.ConsoleCommands()
-  AuctionHelperDataWindow:SetHidden(false)
-  -- ScrollListExampleMainWindow:SetText("the message")
+  AuctionHelperDataWindow:SetHidden(true)
 end
  
 -- Then we create an event handler function which will be called when the "addon loaded" event
@@ -57,7 +54,6 @@ function AuctionHelperDataField_OnTextChanged (self)
       AuctionHelperData[inum].estimated = est
       AuctionHelperData[inum].start = st
   end
-  
 end
 
 function AuctionHelper:ConsoleCommands()
@@ -80,11 +76,20 @@ function AuctionHelper:ConsoleCommands()
           command = string.lower(command)
           if command == "help" then
             d("-- Auction Helper commands --")
-            d("/a                  Show or hide the data reader window")
-            d("/a lc [bid] [estimated]  Print the last call for bids. Estimated value is optional")
-            d("/a g1 [bid]                 [bid] going once!")
-            d("/a g2 [bid]                 [bid] going twice!")
-            d("/a sold [user] [bid]        Print SOLD message")
+            d("/a                        Show or hide the data reader window")
+            d("/a b  [bid]               Set the current high bid to [bid]")
+            d("/a go [lot #]             Stage up the lot text for the lot number specified")
+            d("/a go next                Stage up the lot text for the lot number following the previous one")
+            d("/a sb                     Stage up minimum bid text for the current lot")
+            d("/a sb [bid]               Stage up minimum bid text in the specified amount")
+            d("/a lc                     Stage up last call text at the current bid amount")
+            d("/a lc [bid]               Stage up last call text at the bid amount specified")
+            d("/a lc [bid] [estimated]   Stage up the last call text with the estimated value nudge")
+            d("/a g1                     Stage up the Going Once! text at the current bid")
+            d("/a g1 [bid]               Stage up the Going Once! text at the bid specified")
+            d("/a g2                     Stage up the Going Twice! text at the current bid")
+            d("/a g2 [bid]               Stage up the Going Twice! text at the bid specified")
+            d("/a sold                   Stage up the SOLD message using the current lead bidder and amount")
           elseif command == "lc" then
             if (string.len(user) <= 0) then
               StartChatInput(string.format("%s is the current top bid, any other bids?", currentBid))
@@ -105,15 +110,19 @@ function AuctionHelper:ConsoleCommands()
             currentBid = user
             d(string.format("-- Current top bid set to %s --", currentBid));
           elseif command == "g1" then
-            -- value = user
+            if (string.len(user) > 0) then
+              currentBid = user
+            end
             StartChatInput(string.format("%s going once!", currentBid))
           elseif command == "g2" then
-            value = user
+            if (string.len(user) > 0) then
+              currentBid = user
+            end
             StartChatInput(string.format("%s going twice!", currentBid))
           elseif command == "sold" then
             StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", currentWinner, currentBid))
           elseif command == "" then
-            AuctionHelperDataWindow:SetHidden(false)
+            AuctionHelperDataWindow:SetHidden(not AuctionHelperDataWindow:IsHidden())
           elseif command == "go" then
             if (string.len(user) > 0) then
               if (string.lower(user) == "next") then
@@ -125,7 +134,7 @@ function AuctionHelper:ConsoleCommands()
                 end
               end
               if (AuctionHelperData[currentIndex] ~= nil) then
-                d(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
+                StartChatInput(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
               else
                 d("reached the end")
               end
@@ -137,7 +146,7 @@ function AuctionHelper:ConsoleCommands()
             else
               bid = AuctionHelperData[currentIndex].start
             end
-            d(string.format("<<< Starting bid for this lot: %s >>>", bid))
+            StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", bid))
           end
     end
 end
@@ -145,53 +154,5 @@ end
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)
 SecurePostHook(SharedChatSystem, "ShowPlayerContextMenu", MyShowPlayerContextMenu)
-
-
-
-
--- test window
-  
-  -- function SLE.MouseEnter(control)
-  --   SLE.UnitList:Row_OnMouseEnter(control)
-  -- end
-  
-  -- function SLE.MouseExit(control)
-  --   SLE.UnitList:Row_OnMouseExit(control)
-  -- end
-  
-  -- function SLE.MouseUp(control, button, upInside)
-  --   local cd = control.data
-  --   d(table.concat( { cd.name, cd.race, cd.class, cd.zone }, " "))
-  -- end
-  
---  function SLE.TrackUnit()
---    local targetName = GetUnitName("reticleover")
---    if targetName == "" then return end
---    local targetRace = GetUnitRace("reticleover")
---    local targetClass = GetUnitClass("reticleover")
---    local targetZone = GetUnitZone("reticleover")
---    SLE.units[targetName] = {race=tagetRace, class=targetClass, zone=targetZone}
---    SLE.UnitList:Refresh()
---  end
-  
-  -- do all this when the addon is loaded
-  -- function .Init(eventCode, addOnName)
-  --   if addOnName ~= "AuctionHelper" then return end
-  
-    -- Event Registration
-    -- EVENT_MANAGER:RegisterForEvent("SLE_RETICLE_TARGET_CHANGED", EVENT_RETICLE_TARGET_CHANGED, SLE.TrackUnit)
-  
-    -- SLE.UnitList = UnitList:New()
-    -- local playerName = GetUnitName("player")
-    -- local playerRace = GetUnitRace("player")
-    -- local playerClass = GetUnitClass("player")
-    -- local playerZone = GetUnitZone("player")
-    -- SLE.units[playerName] = {race=playerRace, class=playerClass, zone=playerZone}
-    -- SLE.UnitList:Refresh()
-  
-    
-  -- end
-  
-  -- EVENT_MANAGER:RegisterForEvent("SLE_Init", EVENT_ADD_ON_LOADED , SLE.Init)
 
   
