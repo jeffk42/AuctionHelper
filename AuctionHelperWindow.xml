@@ -13,10 +13,11 @@
 
             </OnUpdate>
             <Anchor point="BOTTOM" relativeTo="GuiRoot" relativePoint="BOTTOM" offsetX="0" offsetY="-128"/>
-            <Dimensions x="512" y="384" />
+            <Dimensions x="512" y="425" />
             <Controls>
                 <Backdrop name="$(parent)BG" inherits="ZO_ThinBackdrop" />
-                <Label name="$(parent)Heading" font="ZoFontWindowTitle" color="CFDCBD" wrapMode="ELLIPSIS" verticalAlignment="CENTER" text="Auction Helper Data Window">
+                <Label name="$(parent)Heading" font="ZoFontWindowTitle" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Auction Helper Data Window">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetX="16" offsetY="10"/>
                 </Label>
                 <Button name="$(parent)CloseButton" inheritAlpha="true" verticalAlignment="CENTER" horizontalAlignment="CENTER">
@@ -27,18 +28,25 @@
                     AuctionHelperDataWindow:SetHidden(true)
                     </OnClicked>
                 </Button>
-            
                 <Backdrop name="$(parent)Body1" inherits="ZO_EditBackdrop">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="8" offsetX="-2" />
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="10" offsetX="-2" />
                     <Dimensions y="325" x="485" />
                     <Controls>
                         <EditBox name="$(parent)Field" inherits="ZO_DefaultEditMultiLineForBackdrop" font="ZoFontGameBold" maxInputCharacters="20000">
                             <OnTextChanged>
-                                AuctionHelperDataField_OnTextChanged(self)
+                                
                             </OnTextChanged>
                         </EditBox>
                     </Controls>
                 </Backdrop>
+                <Button name="$(parent)UpdateButton" inherits="ZO_DefaultButton" text="Update Auction Data">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Body1" relativePoint="BOTTOMLEFT"
+                        offsetY="12" offsetX="0" />
+                    <Dimensions x="250" />
+                    <OnClicked>
+                        AuctionHelperDataField_OnTextChanged(AuctionHelperDataWindowBody1Field)
+                    </OnClicked>
+                </Button>
             </Controls>
         </TopLevelControl>
     </Controls>

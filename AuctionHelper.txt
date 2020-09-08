@@ -3,3 +3,4 @@
 
 AuctionHelper.lua
 AuctionHelperWindow.xml
+AuctionHelperControlWindow.xml

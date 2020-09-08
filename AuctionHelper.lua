@@ -2,9 +2,6 @@
 AuctionHelper = {}
 local AuctionHelperData = {}
 local currentIndex = 0
-local currentBid = ""
-local currentWinner = ""
-local currentEstimate = ""
  
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
@@ -13,6 +10,7 @@ AuctionHelper.name = "AuctionHelper"
 function AuctionHelper:Initialize()
   AuctionHelper.ConsoleCommands()
   AuctionHelperDataWindow:SetHidden(true)
+  AuctionHelperControlWindow:SetHidden(true)
 end
  
 -- Then we create an event handler function which will be called when the "addon loaded" event
@@ -29,8 +27,9 @@ local function handleSoldBid(rawName)
 end
 
 local function setCurrentWinner(rawName)
-  currentWinner = rawName
+  AuctionHelperData[currentIndex].winner = rawName
   d(string.format("-- Current High Bidder set to %s --", rawName))
+  updateWindowFields()
 end
 
 local function MyShowPlayerContextMenu(playerData, rawName)
@@ -41,19 +40,105 @@ local function MyShowPlayerContextMenu(playerData, rawName)
 end
 
 function AuctionHelperDataField_OnTextChanged (self)
+  d("text changed")
   AuctionHelperData = {}
+  AuctionHelperControlWindowLotList.m_comboBox:ClearItems()
+  d("items cleared")
   s = AuctionHelperDataWindowBody1Field:GetText()
-  for index, title, est, st in string.gmatch( s, "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",\"\$(.-)\",.-[\n]" ) do
-      inum = tonumber(index)
-      AuctionHelperData[inum] = {title="", estimated="", start=""}
+  d("text received")
+  for index, title, est, st in string.gmatch( s, "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]" ) do
+      d(string.format("Generating Lot #%s...", index))
+      local inum = tonumber(index)
+      AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid=""}
       -- Trim the edges of the title
       title = string.match(title, "^[%s]*(.-)[%s]*$")
+      est = string.match(est, "^[%s]*(.-)[%s]*$")
+      st = string.match(st, "^[%s]*(.-)[%s]*$")
       -- Reduce extra whitespace
       title = string.gsub(title, "[ \t]+", " ")
+      AuctionHelperData[inum].index = inum
       AuctionHelperData[inum].title = title
       AuctionHelperData[inum].estimated = est
       AuctionHelperData[inum].start = st
+      AuctionHelperData[inum].winner = ""
+      AuctionHelperData[inum].winbid = ""
+      local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", inum, title), function() fireSelectionChanged(AuctionHelperData[inum]) end )
+      AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
   end
+  selectLotItem(AuctionHelperData[1])
+end
+
+function fireSelectionChanged(item)
+  changeLot(item.index)
+  updateWindowFields()
+end
+
+function selectLotItem(item)
+  d(string.format("item selected: %s", item.title))
+  changeLot(item.index)
+  updateWindowFields()
+  AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[currentIndex])
+end
+
+function changeLot(newLotNumber)
+  if (AuctionHelperData[newLotNumber] ~= nil) then
+    currentIndex = newLotNumber
+  else
+    d("ERROR: chosen lot number doesn't exist")
+  end
+end
+
+function updateWindowFields()
+  AuctionHelperControlWindowLotNumLabel:SetText(string.format("Lot #%d", currentIndex))
+  AuctionHelperControlWindowLotNameLabel:SetText(string.format("Title: %s", AuctionHelperData[currentIndex].title))
+  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("Estimated Value: %s", AuctionHelperData[currentIndex].estimated))
+  AuctionHelperControlWindowMinimumLabel:SetText(string.format("Starting Bid: %s",AuctionHelperData[currentIndex].start))
+  AuctionHelperControlWindowCurrentBidderLabel:SetText(string.format("Current High Bidder: %s",AuctionHelperData[currentIndex].winner))
+  AuctionHelperControlWindowCurrentBidLabel:SetText(string.format("Current High Bid: %s",AuctionHelperData[currentIndex].winbid))
+end
+
+function setCurrentHighBid(value)
+  AuctionHelperData[currentIndex].winbid = value
+  updateWindowFields()
+  d(string.format("-- Current top bid set to %s --", AuctionHelperData[currentIndex].winbid))
+end
+
+function stageGoingOnce()
+  StartChatInput(string.format("%s going once!", AuctionHelperData[currentIndex].winbid))
+end
+
+function stageGoingTwice()
+  StartChatInput(string.format("%s going twice!", AuctionHelperData[currentIndex].winbid))
+end
+
+function stageSoldMessage()
+  StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", AuctionHelperData[currentIndex].winner, AuctionHelperData[currentIndex].winbid))
+end
+
+function stageNewLot()
+  StartChatInput(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
+end
+
+function stageStartingBid()
+  StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
+end
+
+function setNewStartingBid(num)
+  AuctionHelperData[currentIndex].start = num
+  updateWindowFields()
+end
+
+function setNewEstimatedValue(num)
+  AuctionHelperData[currentIndex].estimated = num
+  updateWindowFields()
+end
+
+function stageLastCallWithEstimated()
+  StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", AuctionHelperData[currentIndex].winbid, AuctionHelperData[currentIndex].estimated))
+end
+
+function stageLastCall()
+  StartChatInput(string.format("%s is the current top bid, any other bids?", AuctionHelperData[currentIndex].winbid))
 end
 
 function AuctionHelper:ConsoleCommands()
@@ -67,12 +152,12 @@ function AuctionHelper:ConsoleCommands()
         local command = ""
 
         for w in string.gmatch(param,"%w+") do
-            argNum = argNum + 1
-            if argNum == 1 then command = w end
-            if argNum == 2 then user = w end
-            if argNum == 3 then value = w end
-            if argNum == 4 then estimated = w end
-          end
+          argNum = argNum + 1
+          if argNum == 1 then command = w end
+          if argNum == 2 then user = w end
+          if argNum == 3 then value = w end
+          if argNum == 4 then estimated = w end
+        end
           command = string.lower(command)
           if command == "help" then
             d("-- Auction Helper commands --")
@@ -92,61 +177,58 @@ function AuctionHelper:ConsoleCommands()
             d("/a sold                   Stage up the SOLD message using the current lead bidder and amount")
           elseif command == "lc" then
             if (string.len(user) <= 0) then
-              StartChatInput(string.format("%s is the current top bid, any other bids?", currentBid))
+              stageLastCall()
             else
               if (string.len(value) > 0) then
                 estimated = value
-                currentEstimate = estimated
               end
               value = user
-              currentBid = value
+              setCurrentHighBid(value)
               if (string.len(estimated) > 0) then
-                StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", value, estimated))
+                setNewEstimatedValue(estimated)
+                stageLastCallWithEstimated()
               else
-                StartChatInput(string.format("%s is the current top bid, any other bids?", value))
+                stageLastCall()
               end
             end
           elseif command == "b" then
-            currentBid = user
-            d(string.format("-- Current top bid set to %s --", currentBid));
+            setCurrentHighBid(user)
           elseif command == "g1" then
             if (string.len(user) > 0) then
-              currentBid = user
+              setCurrentHighBid(user)
             end
-            StartChatInput(string.format("%s going once!", currentBid))
+            stageGoingOnce()
           elseif command == "g2" then
             if (string.len(user) > 0) then
-              currentBid = user
+              setCurrentHighBid(user)
             end
-            StartChatInput(string.format("%s going twice!", currentBid))
+            stageGoingTwice()
           elseif command == "sold" then
-            StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", currentWinner, currentBid))
+            stageSoldMessage()
           elseif command == "" then
-            AuctionHelperDataWindow:SetHidden(not AuctionHelperDataWindow:IsHidden())
+            AuctionHelperDataWindow:SetHidden(false)
+            AuctionHelperControlWindow:SetHidden(false)
           elseif command == "go" then
             if (string.len(user) > 0) then
               if (string.lower(user) == "next") then
-                currentIndex = currentIndex + 1
+                changeLot(currentIndex + 1)
               else
                 local newIndex = tonumber(user)
                 if (newIndex > 0) then
-                  currentIndex = newIndex
+                  changeLot(newIndex)
                 end
               end
               if (AuctionHelperData[currentIndex] ~= nil) then
-                StartChatInput(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
+                stageNewLot()
               else
                 d("reached the end")
               end
             end
           elseif command == "sb" then
-            local bid = ""
             if (string.len(user) > 0) then
-              bid = user
-            else
-              bid = AuctionHelperData[currentIndex].start
+              setNewStartingBid(user)
             end
-            StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", bid))
+            stageStartingBid()
           end
     end
 end
