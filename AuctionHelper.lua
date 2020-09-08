@@ -120,8 +120,11 @@ function stageNewLot()
 end
 
 function stageStartingBid()
-  StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
-end
+  if (string.lower(AuctionHelperData[currentIndex].start) == "flash") then
+    StartChatInput(string.format("FLASH LOT! Estimated value: %s. Wait for the GO, and you have 30 SECONDS to bid. Highest bid when I say STOP gets the lot!", AuctionHelperData[currentIndex].estimated))
+  else
+    StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
+  end
 
 function setNewStartingBid(num)
   AuctionHelperData[currentIndex].start = num
