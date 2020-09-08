@@ -125,6 +125,7 @@ function stageStartingBid()
   else
     StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
   end
+end
 
 function setNewStartingBid(num)
   AuctionHelperData[currentIndex].start = num
