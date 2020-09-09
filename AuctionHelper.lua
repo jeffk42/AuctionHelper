@@ -33,7 +33,7 @@ local function setCurrentWinner(rawName)
   updateWindowFields()
 end
 
-local function SetWinnerContextMenu(playerData, rawName)
+function SetWinnerContextMenu(playerData, rawName)
   AddCustomMenuItem("Set Current Winner", function() setCurrentWinner(rawName) end)  
   ShowMenu()
 end
@@ -50,6 +50,7 @@ local function RestoreSavedLotData()
   end
   selectLotItem(AuctionHelperData[currentIndex])
   AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
+  AuctionHelperControlWindowBidderBoxTextField:SetText(AuctionHelperData[currentIndex].winner)
 end
 
 function AuctionHelperDataField_OnTextChanged (self)
@@ -90,6 +91,7 @@ function AuctionHelper.FireSelectionChanged(theNewLot)
   changeLot(theNewLot)
   updateWindowFields()
   AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
+  AuctionHelperControlWindowBidderBoxTextField:SetText(AuctionHelperData[currentIndex].winner)
 end
 
 function selectLotItem(theNewLot)
@@ -131,7 +133,9 @@ function updateHighBidFromField(field)
 end
 
 function updateBidderFromField(field)
-  setCurrentWinner(field:GetText())
+  if (field:GetText() ~= nil) then
+    setCurrentWinner(field:GetText())
+  end
 end
 
 function updateWindowFields()
