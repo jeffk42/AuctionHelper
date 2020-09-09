@@ -1,32 +1,18 @@
 -- First, we create a namespace for our addon by declaring a top-level table that will hold everything else.
 AuctionHelper = {}
 AuctionHelper.variableVersion = 1
+AuctionHelper.savedVariables = {}
 AuctionHelper.Default = {
   AuctionHelperData = {},
   currentIndex = 1
 }
-AuctionHelper.AuctionHelperData = {}
-AuctionHelper.currentIndex = 1
-AuctionHelper.savedVariables = {}
-AuctionHelper.DebugVar = -1
+local AuctionHelperData = {}
+local currentIndex = 1
+local csvRegex = "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]"
+local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
  
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
- 
--- Initialize function
-function AuctionHelper:Initialize()
-  AuctionHelper.savedVariables = ZO_SavedVars:NewAccountWide("AuctionHelperVars", AuctionHelper.variableVersion, nil, AuctionHelper.Default)
-  AuctionHelper.AuctionHelperData = AuctionHelper.savedVariables.AuctionHelperData
-  d("data is below")
-  d(AuctionHelper.savedVariables.AuctionHelperData)
-  AuctionHelper.currentIndex = AuctionHelper.savedVariables.currentIndex
-  d(AuctionHelper.currentIndex)
-  AuctionHelper.ConsoleCommands()
-  AuctionHelperDataWindow:SetHidden(true)
-  AuctionHelperControlWindow:SetHidden(true)
-  AuctionHelper.RestoreSavedLotData()
-  -- EVENT_MANAGER:UnregisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED)
-end
  
 -- Then we create an event handler function which will be called when the "addon loaded" event
 -- occurs. We'll use this to initialize our addon after all of its resources are fully loaded.
@@ -37,35 +23,29 @@ function AuctionHelper.OnAddOnLoaded(event, addonName)
   end
 end
 
-local function handleSoldBid(rawName)
-  StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", rawName, currentBid))
-end
-
 local function setCurrentWinner(rawName)
-  AuctionHelperData[AuctionHelper.currentIndex].winner = rawName
-  AuctionHelper.savedVariables.AuctionHelperData[AuctionHelper.currentIndex].winner = rawName
+  AuctionHelperData[currentIndex].winner = rawName
+  AuctionHelper.savedVariables.AuctionHelperData[currentIndex].winner = rawName
   d(string.format("-- Current High Bidder set to %s --", rawName))
   updateWindowFields()
 end
 
-local function MyShowPlayerContextMenu(playerData, rawName)
-  AddCustomMenuItem("Set Current Winner", function() setCurrentWinner(rawName) end)
-  -- AddCustomMenuItem("Sold To " .. rawName, function() handleSoldBid(rawName) end)
-  
+local function SetWinnerContextMenu(playerData, rawName)
+  AddCustomMenuItem("Set Current Winner", function() setCurrentWinner(rawName) end)  
   ShowMenu()
 end
 
-function AuctionHelper.RestoreSavedLotData()
+local function RestoreSavedLotData()
   AuctionHelperControlWindowLotList.m_comboBox:ClearItems()
   local ind = 1
   d("ind" .. ind)
-  while AuctionHelper.AuctionHelperData[ind] do
+  while AuctionHelperData[ind] do
     local tmpIndx = ind
-    local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", ind, AuctionHelper.AuctionHelperData[ind].title), function() AuctionHelper.FireSelectionChanged(tmpIndx) end )
+    local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", ind, AuctionHelperData[ind].title), function() AuctionHelper.FireSelectionChanged(tmpIndx) end )
     AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
     ind = ind + 1
   end
-  selectLotItem(AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex])
+  selectLotItem(AuctionHelperData[currentIndex])
 end
 
 function AuctionHelperDataField_OnTextChanged (self)
@@ -73,34 +53,34 @@ function AuctionHelperDataField_OnTextChanged (self)
   if (string.len(s) < 1) then
     return
   end
-  AuctionHelper.AuctionHelperData = {}
+
+  AuctionHelperData = {}
   AuctionHelperControlWindowLotList.m_comboBox:ClearItems()
   
-  for index, title, est, st in string.gmatch( s, "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]" ) do
+  for index, title, est, st in string.gmatch( s, csvRegex ) do
       local inum = tonumber(index)
-      AuctionHelper.AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid=""}
+      AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid=""}
       -- Trim the edges of the title
       title = string.match(title, "^[%s]*(.-)[%s]*$")
       est = string.match(est, "^[%s]*(.-)[%s]*$")
       st = string.match(st, "^[%s]*(.-)[%s]*$")
       -- Reduce extra whitespace
       title = string.gsub(title, "[ \t]+", " ")
-      AuctionHelper.AuctionHelperData[inum].index = inum
-      AuctionHelper.AuctionHelperData[inum].title = title
-      AuctionHelper.AuctionHelperData[inum].estimated = est
-      AuctionHelper.AuctionHelperData[inum].start = st
-      AuctionHelper.AuctionHelperData[inum].winner = ""
-      AuctionHelper.AuctionHelperData[inum].winbid = ""
+      AuctionHelperData[inum].index = inum
+      AuctionHelperData[inum].title = title
+      AuctionHelperData[inum].estimated = est
+      AuctionHelperData[inum].start = st
+      AuctionHelperData[inum].winner = ""
+      AuctionHelperData[inum].winbid = ""
       local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", inum, title), function() AuctionHelper.FireSelectionChanged(inum) end )
       AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
   end
-  selectLotItem(AuctionHelper.AuctionHelperData[1])
-  AuctionHelper.savedVariables.AuctionHelperData = AuctionHelper.AuctionHelperData
+  selectLotItem(AuctionHelperData[1])
+  AuctionHelper.savedVariables.AuctionHelperData = AuctionHelperData
 end
 
 function AuctionHelper.FireSelectionChanged(theNewLot)
-  AuctionHelper.DebugVar = theNewLot
-  if (AuctionHelper.AuctionHelperData[theNewLot] == nil) then
+  if (AuctionHelperData[theNewLot] == nil) then
     return
   end
   changeLot(theNewLot)
@@ -114,40 +94,40 @@ function selectLotItem(theNewLot)
   d(string.format("item selected: %s", theNewLot.title))
   changeLot(theNewLot.index)
   updateWindowFields()
-  AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[AuctionHelper.currentIndex])
+  AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[currentIndex])
 end
 
 function changeLot(newLotNumber)
-  if (AuctionHelper.AuctionHelperData[newLotNumber] ~= nil) then
-    AuctionHelper.currentIndex = newLotNumber
-    AuctionHelper.savedVariables.currentIndex = AuctionHelper.currentIndex
+  if (AuctionHelperData[newLotNumber] ~= nil) then
+    currentIndex = newLotNumber
+    AuctionHelper.savedVariables.currentIndex = currentIndex
   else
     d("ERROR: chosen lot number doesn't exist")
   end
 end
 
 function updateWindowFields()
-  AuctionHelperControlWindowLotNumLabel:SetText(string.format("Lot #%d", AuctionHelper.currentIndex))
-  AuctionHelperControlWindowLotNameLabel:SetText(string.format("Title: %s", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].title))
-  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("Estimated Value: %s", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].estimated))
-  AuctionHelperControlWindowMinimumLabel:SetText(string.format("Starting Bid: %s",AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].start))
-  AuctionHelperControlWindowCurrentBidderLabel:SetText(string.format("Current High Bidder: %s",AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winner))
-  AuctionHelperControlWindowCurrentBidLabel:SetText(string.format("Current High Bid: %s",AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid))
+  AuctionHelperControlWindowLotNumLabel:SetText(string.format("Lot #%d", currentIndex))
+  AuctionHelperControlWindowLotNameLabel:SetText(string.format("Title: %s", AuctionHelperData[currentIndex].title))
+  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("Estimated Value: %s", AuctionHelperData[currentIndex].estimated))
+  AuctionHelperControlWindowMinimumLabel:SetText(string.format("Starting Bid: %s",AuctionHelperData[currentIndex].start))
+  AuctionHelperControlWindowCurrentBidderLabel:SetText(string.format("Current High Bidder: %s",AuctionHelperData[currentIndex].winner))
+  AuctionHelperControlWindowCurrentBidLabel:SetText(string.format("Current High Bid: %s",AuctionHelperData[currentIndex].winbid))
 end
 
 function setCurrentHighBid(value)
-  AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid = value
-  AuctionHelper.savedVariables.AuctionHelperData[AuctionHelper.currentIndex].winbid = value
+  AuctionHelperData[currentIndex].winbid = value
+  AuctionHelper.savedVariables.AuctionHelperData[currentIndex].winbid = value
   updateWindowFields()
-  d(string.format("-- Current top bid set to %s --", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid))
+  d(string.format("-- Current top bid set to %s --", AuctionHelperData[currentIndex].winbid))
 end
 
 function stageGoingOnce()
-  StartChatInput(string.format("%s going once!", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid))
+  StartChatInput(string.format("%s going once!", AuctionHelperData[currentIndex].winbid))
 end
 
 function stageGoingTwice()
-  StartChatInput(string.format("%s going twice!", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid))
+  StartChatInput(string.format("%s going twice!", AuctionHelperData[currentIndex].winbid))
 end
 
 function stageSoldMessage()
@@ -155,35 +135,35 @@ function stageSoldMessage()
 end
 
 function stageNewLot()
-  StartChatInput(string.format("==== Lot #%d: %s ====", AuctionHelper.currentIndex, AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].title))
+  StartChatInput(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
 end
 
 function stageStartingBid()
-  if (string.lower(AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].start) == "flash") then
-    StartChatInput(string.format("FLASH LOT! Estimated value: %s. Wait for the GO, and you have 30 SECONDS to bid. Highest bid when I say STOP gets the lot!", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].estimated))
+  if (string.lower(AuctionHelperData[currentIndex].start) == "flash") then
+    StartChatInput(string.format("FLASH LOT! Estimated value: %s. Wait for the GO, and you have 30 SECONDS to bid. Highest bid when I say STOP gets the lot!", AuctionHelperData[currentIndex].estimated))
   else
-    StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].start))
+    StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
   end
 end
 
 function setNewStartingBid(num)
-  AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].start = num
-  AuctionHelper.savedVariables.AuctionHelperData[AuctionHelper.currentIndex].start = num
+  AuctionHelperData[currentIndex].start = num
+  AuctionHelper.savedVariables.AuctionHelperData[currentIndex].start = num
   updateWindowFields()
 end
 
 function setNewEstimatedValue(num)
-  AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].estimated = num
-  AuctionHelper.savedVariables.AuctionHelperData[AuctionHelper.currentIndex].start = num
+  AuctionHelperData[currentIndex].estimated = num
+  AuctionHelper.savedVariables.AuctionHelperData[currentIndex].start = num
   updateWindowFields()
 end
 
 function stageLastCallWithEstimated()
-  StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid, AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].estimated))
+  StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", AuctionHelperData[currentIndex].winbid, AuctionHelperData[currentIndex].estimated))
 end
 
 function stageLastCall()
-  StartChatInput(string.format("%s is the current top bid, any other bids?", AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex].winbid))
+  StartChatInput(string.format("%s is the current top bid, any other bids?", AuctionHelperData[currentIndex].winbid))
 end
 
 function AuctionHelper:ConsoleCommands()
@@ -256,14 +236,14 @@ function AuctionHelper:ConsoleCommands()
           elseif command == "go" then
             if (string.len(user) > 0) then
               if (string.lower(user) == "next") then
-                changeLot(AuctionHelper.currentIndex + 1)
+                changeLot(currentIndex + 1)
               else
                 local newIndex = tonumber(user)
                 if (newIndex > 0) then
                   changeLot(newIndex)
                 end
               end
-              if (AuctionHelper.AuctionHelperData[AuctionHelper.currentIndex] ~= nil) then
+              if (AuctionHelperData[currentIndex] ~= nil) then
                 stageNewLot()
               else
                 d("reached the end")
@@ -278,8 +258,21 @@ function AuctionHelper:ConsoleCommands()
     end
 end
 
+-- Initialize function
+function AuctionHelper:Initialize()
+  AuctionHelper.savedVariables = ZO_SavedVars:NewAccountWide("AuctionHelperVars", AuctionHelper.variableVersion, nil, AuctionHelper.Default)
+  AuctionHelperData = AuctionHelper.savedVariables.AuctionHelperData
+  d(AuctionHelper.savedVariables.AuctionHelperData)
+  currentIndex = AuctionHelper.savedVariables.currentIndex
+  AuctionHelper.ConsoleCommands()
+  AuctionHelperDataWindow:SetHidden(true)
+  AuctionHelperControlWindow:SetHidden(true)
+  RestoreSavedLotData()
+  EVENT_MANAGER:UnregisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED)
+end
+
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)
-SecurePostHook(SharedChatSystem, "ShowPlayerContextMenu", MyShowPlayerContextMenu)
+SecurePostHook(SharedChatSystem, "SetWinnerContextMenu", SetWinnerContextMenu)
 
   
