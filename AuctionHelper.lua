@@ -273,6 +273,6 @@ end
 
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)
-SecurePostHook(SharedChatSystem, "SetWinnerContextMenu", SetWinnerContextMenu)
+SecurePostHook(SharedChatSystem, "ShowPlayerContextMenu", SetWinnerContextMenu)
 
   
