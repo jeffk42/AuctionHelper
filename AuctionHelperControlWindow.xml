@@ -13,7 +13,7 @@
 
             </OnUpdate>
             <Anchor point="TOPRIGHT" relativeTo="GuiRoot" relativePoint="TOPRIGHT" offsetX="-128" offsetY="128"/>
-            <Dimensions x="600" y="384" />
+            <Dimensions x="600" y="420" />
             <Controls>
                 <Backdrop name="$(parent)BG" inherits="ZO_ThinBackdrop" />
                 <Label name="$(parent)Heading" font="ZoFontWindowTitle" color="CFDCBD" wrapMode="ELLIPSIS"
@@ -92,33 +92,96 @@
                         stageSoldMessage()
                     </OnClicked>
                 </Button>
-                <Label name="$(parent)CurrentLotLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
-                    verticalAlignment="CENTER" text="Current Lot:">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)ShowLotButton" relativePoint="TOPRIGHT" offsetX="16" offsetY="0"/>
+                <Label name="$(parent)HighBidEntryLabel" font="ZoFontHeader2" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Set High Bid: ">
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)ShowLotButton" relativePoint="TOPRIGHT" offsetX="16" offsetY="0"/>
                 </Label>
-                <Label name="$(parent)LotNumLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
-                    verticalAlignment="CENTER" text="">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentLotLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="15"/>
+                <Backdrop name="$(parent)CurrentBidBox" inherits="ZO_EditBackdrop">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)HighBidEntryLabel" relativePoint="TOPRIGHT" offsetY="0" offsetX="10" />
+                    <Dimensions x="100" />
+                    <Controls>
+                        <EditBox name="$(parent)TextField" inherits="ZO_DefaultEditForBackdrop" font="ZoFontGameBold" maxInputCharacters="20">
+                            <OnInitialized>
+                                
+                            </OnInitialized>
+                            <OnTextChanged>
+                                if self:GetText() then
+                                    updateHighBidFromField(self)
+                                end
+                                <!-- AuctionHelperControlWindowCurrentBidLabel:SetText(self:GetText()) -->
+                            </OnTextChanged>
+                        </EditBox>
+                    </Controls>
+                </Backdrop>
+
+                <Label name="$(parent)BidderEntryLabel" font="ZoFontHeader2" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Set Bidder: ">
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)HighBidEntryLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="10"/>
                 </Label>
-                <Label name="$(parent)LotNameLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
-                    verticalAlignment="CENTER" text="">
-                   <Anchor point="TOPLEFT" relativeTo="$(parent)LotNumLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                <Backdrop name="$(parent)BidderBox" inherits="ZO_EditBackdrop">
+                    <Anchor point="TOP" relativeTo="$(parent)CurrentBidBox" relativePoint="BOTTOM" offsetY="5" offsetX="0" />
+                    <Dimensions x="100" />
+                    <Controls>
+                        <EditBox name="$(parent)TextField" inherits="ZO_DefaultEditForBackdrop" font="ZoFontGameBold" maxInputCharacters="20">
+                            <OnTextChanged>
+                                updateBidderFromField(self)
+                            </OnTextChanged>
+                        </EditBox>
+                    </Controls>
+                </Backdrop>
+
+                <Label name="$(parent)CurrentLotLabel" font="ZoFontHeader4" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Current Lot: ">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)StartBidButton" relativePoint="TOPRIGHT" offsetX="16" offsetY="50"/>
                 </Label>
-                <Label name="$(parent)EstimatedLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                <Label name="$(parent)LotNumLabel" font="ZoFontHeader4" color="AAFFAA" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)LotNameLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentLotLabel" relativePoint="TOPRIGHT" offsetX="10" offsetY="0"/>
                 </Label>
-                <Label name="$(parent)MinimumLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
-                    verticalAlignment="CENTER" text="">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)EstimatedLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+
+                <Label name="$(parent)LotNameTitleLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Title: ">
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentLotLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
                 </Label>
-                <Label name="$(parent)CurrentBidderLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                <Label name="$(parent)LotNameLabel" font="ZoFontHeader2" color="AAFFAA" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)MinimumLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                   <Anchor point="LEFT" relativeTo="$(parent)LotNameTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
                 </Label>
-                <Label name="$(parent)CurrentBidLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+
+                <Label name="$(parent)EstimatedTitleLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Estimated Value: ">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)LotNameTitleLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                </Label>
+                <Label name="$(parent)EstimatedLabel" font="ZoFontHeader2" color="AAFFAA" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentBidderLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                   <Anchor point="LEFT" relativeTo="$(parent)EstimatedTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
+                   <OnTextChanged>LabelUpdate(self)</OnTextChanged>
+                </Label>
+
+                <Label name="$(parent)MinimumTitleLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Starting Bid: ">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)EstimatedTitleLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                </Label>
+                <Label name="$(parent)MinimumLabel" font="ZoFontHeader2" color="AAFFAA" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="">
+                   <Anchor point="LEFT" relativeTo="$(parent)MinimumTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
+                   <OnTextChanged>LabelUpdate(self)</OnTextChanged>
+                </Label>
+                <Label name="$(parent)CurrentBidderTitleLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Current High Bidder: ">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)MinimumTitleLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                </Label>
+                <Label name="$(parent)CurrentBidderLabel" font="ZoFontHeader2" color="FFFF99" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="">
+                   <Anchor point="LEFT" relativeTo="$(parent)CurrentBidderTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
+                </Label>
+                <Label name="$(parent)CurrentBidTitleLabel" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Current High Bid: ">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentBidderTitleLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="5"/>
+                </Label>
+                <Label name="$(parent)CurrentBidLabel" font="ZoFontHeader2" color="FFFF99" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="">
+                   <Anchor point="LEFT" relativeTo="$(parent)CurrentBidTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
                 </Label>
             </Controls>
         </TopLevelControl>

@@ -10,6 +10,9 @@ local AuctionHelperData = {}
 local currentIndex = 1
 local csvRegex = "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]"
 local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
+local AuctionHelperBuffer = nil
+local copyBufferList = {}
+
  
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
@@ -46,6 +49,7 @@ local function RestoreSavedLotData()
     ind = ind + 1
   end
   selectLotItem(AuctionHelperData[currentIndex])
+  AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
 function AuctionHelperDataField_OnTextChanged (self)
@@ -85,6 +89,7 @@ function AuctionHelper.FireSelectionChanged(theNewLot)
   end
   changeLot(theNewLot)
   updateWindowFields()
+  AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
 function selectLotItem(theNewLot)
@@ -106,13 +111,37 @@ function changeLot(newLotNumber)
   end
 end
 
+-- Used to change the color of non-numeric labels to red,
+-- and numeric labels to green.
+function LabelUpdate(label)
+  if (string.match(label:GetText(), "[a-zA-Z ]+")) then
+    label:SetColor(1, 0.6, 0.6, 1)
+  else
+    label:SetColor(0.7, 1, 0.7, 1)
+  end
+end
+
+function updateHighBidFromField(field)
+  if (field:GetText() ~= nil) then
+    setCurrentHighBid(field:GetText())
+    -- AuctionHelperData[currentIndex].winbid = field:GetText()
+    -- AuctionHelper.savedVariables.AuctionHelperData[currentIndex].winbid = field:GetText()
+    -- d(string.format("-- Current top bid set to %s --", AuctionHelperData[currentIndex].winbid))
+  end
+end
+
+function updateBidderFromField(field)
+  setCurrentWinner(field:GetText())
+end
+
 function updateWindowFields()
-  AuctionHelperControlWindowLotNumLabel:SetText(string.format("Lot #%d", currentIndex))
-  AuctionHelperControlWindowLotNameLabel:SetText(string.format("Title: %s", AuctionHelperData[currentIndex].title))
-  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("Estimated Value: %s", AuctionHelperData[currentIndex].estimated))
-  AuctionHelperControlWindowMinimumLabel:SetText(string.format("Starting Bid: %s",AuctionHelperData[currentIndex].start))
-  AuctionHelperControlWindowCurrentBidderLabel:SetText(string.format("Current High Bidder: %s",AuctionHelperData[currentIndex].winner))
-  AuctionHelperControlWindowCurrentBidLabel:SetText(string.format("Current High Bid: %s",AuctionHelperData[currentIndex].winbid))
+  AuctionHelperControlWindowLotNumLabel:SetText(string.format("#%d", currentIndex))
+  AuctionHelperControlWindowLotNameLabel:SetText(string.format("%s", AuctionHelperData[currentIndex].title))
+  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("%s", AuctionHelperData[currentIndex].estimated))
+  AuctionHelperControlWindowMinimumLabel:SetText(string.format("%s",AuctionHelperData[currentIndex].start))
+  AuctionHelperControlWindowCurrentBidderLabel:SetText(AuctionHelperData[currentIndex].winner)
+  AuctionHelperControlWindowCurrentBidLabel:SetText(AuctionHelperData[currentIndex].winbid)
+  -- AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
 function setCurrentHighBid(value)
@@ -218,6 +247,7 @@ function AuctionHelper:ConsoleCommands()
             end
           elseif command == "b" then
             setCurrentHighBid(user)
+            AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
           elseif command == "g1" then
             if (string.len(user) > 0) then
               setCurrentHighBid(user)
@@ -258,6 +288,12 @@ function AuctionHelper:ConsoleCommands()
     end
 end
 
+local function CreateCopyBuffer(buffer)
+  local copyBuffer = CircularBuffer:New(buffer:GetMaxHistoryLines())
+  table.insert(copyBufferList, copyBuffer)
+  return #copyBufferList
+end
+
 -- Initialize function
 function AuctionHelper:Initialize()
   AuctionHelper.savedVariables = ZO_SavedVars:NewAccountWide("AuctionHelperVars", AuctionHelper.variableVersion, nil, AuctionHelper.Default)
@@ -268,8 +304,29 @@ function AuctionHelper:Initialize()
   AuctionHelperDataWindow:SetHidden(true)
   AuctionHelperControlWindow:SetHidden(true)
   RestoreSavedLotData()
+  AuctionHelperBuffer = AuctionHelper.CircularBuffer
+
+  -- local AddWindow_Orig = SharedChatContainer.AddWindow
+  -- SharedChatContainer.AddWindow = function(...)
+  --     local window = AddWindow_Orig(...)
+  --     local buffer = window.buffer
+
+  --     -- we cannot access the messages in the native chat buffer object, so we have to save them separately ourselves.
+  --     local copyBufferIndex = CreateCopyBuffer(buffer)
+
+  --     local AddMessage_Orig = buffer.AddMessage
+  --     buffer.AddMessage = function(self, message, ...)
+  --       AddMessage_Orig(self, message, ...)
+  --     end
+
+  --     return window
+  -- end
+
   EVENT_MANAGER:UnregisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED)
 end
+
+-- maybe can remove?
+AuctionHelper.copyBufferList = copyBufferList
 
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)

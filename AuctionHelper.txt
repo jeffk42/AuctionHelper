@@ -3,5 +3,6 @@
 ## SavedVariables: AuctionHelperVars
 
 AuctionHelper.lua
+CircularBuffer.lua
 AuctionHelperWindow.xml
 AuctionHelperControlWindow.xml
