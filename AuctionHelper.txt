@@ -1,5 +1,6 @@
 ## Title: AKTT Auction Helper
 ## APIVersion: 100031 100032
+## SavedVariables: AuctionHelperVars
 
 AuctionHelper.lua
 AuctionHelperWindow.xml
