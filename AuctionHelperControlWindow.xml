@@ -1,19 +1,19 @@
 <GuiXml>
     <Controls>
-        <TopLevelControl name="AuctionHelperControlWindow" movable="true" mouseEnabled="true" clampedToScreen="true" hidden="true" resizeHandleSize="8" tier="MEDIUM">
+        <TopLevelControl name="AuctionHelperControlWindow" movable="true" mouseEnabled="true" clampedToScreen="true" hidden="true" resizeHandleSize="0" tier="MEDIUM">
             <OnUpdate>
-                local w, h = self:GetDimensions()
+                <!-- local w, h = self:GetDimensions()
                 if ((self.currentWidth ~= w) or (self.currentHeight ~= h)) then
                 self.currentWidth = w
                 self.currentHeight = h
                 if(self.onResize) then
                     self.onResize()
                 end
-                end
+                end -->
 
             </OnUpdate>
-            <Anchor point="TOPRIGHT" relativeTo="GuiRoot" relativePoint="TOPRIGHT" offsetX="-128" offsetY="128"/>
-            <Dimensions x="600" y="420" />
+            <Anchor point="LEFT" relativeTo="AuctionHelperDataWindow" relativePoint="RIGHT" offsetX="15" offsetY="0"/>
+            <Dimensions x="640" y="420" />
             <Controls>
                 <Backdrop name="$(parent)BG" inherits="ZO_ThinBackdrop" />
                 <Label name="$(parent)Heading" font="ZoFontWindowTitle" color="CFDCBD" wrapMode="ELLIPSIS"
@@ -37,11 +37,11 @@
                 </Control>
                 <Label name="$(parent)StageLabel" font="ZoFontHeader3" color="CFDCBD" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="Chat Staging:">
-                   <Anchor point="TOPLEFT" relativeTo="$(parent)LotList" relativePoint="BOTTOMLEFT" offsetX="40" offsetY="8"/>
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)LotList" relativePoint="BOTTOMLEFT" offsetX="55" offsetY="8"/>
                 </Label>
                 <Button name="$(parent)ShowLotButton" inherits="ZO_DefaultButton" text="Current Lot Start">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)StageLabel" relativePoint="BOTTOMLEFT"
-                        offsetY="12" offsetX="-40" />
+                        offsetY="12" offsetX="-55" />
                     <Dimensions x="250" />
                     <OnClicked>
                         stageNewLot()
@@ -105,13 +105,9 @@
                     <Controls>
                         <EditBox name="$(parent)TextField" inherits="ZO_DefaultEditForBackdrop" font="ZoFontGameBold" maxInputCharacters="20">
                             <OnInitialized>
-                                
                             </OnInitialized>
                             <OnTextChanged>
-                                if self:GetText() then
-                                    updateHighBidFromField(self)
-                                end
-                                <!-- AuctionHelperControlWindowCurrentBidLabel:SetText(self:GetText()) -->
+                                updateHighBidFromField(self)
                             </OnTextChanged>
                         </EditBox>
                     </Controls>
@@ -122,14 +118,12 @@
                    <Anchor point="TOPLEFT" relativeTo="$(parent)HighBidEntryLabel" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="10"/>
                 </Label>
                 <Backdrop name="$(parent)BidderBox" inherits="ZO_EditBackdrop">
-                    <Anchor point="TOP" relativeTo="$(parent)CurrentBidBox" relativePoint="BOTTOM" offsetY="5" offsetX="0" />
-                    <Dimensions x="100" />
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)CurrentBidBox" relativePoint="BOTTOMLEFT" offsetY="5" offsetX="0" />
+                    <Dimensions x="215" />
                     <Controls>
-                        <EditBox name="$(parent)TextField" inherits="ZO_DefaultEditForBackdrop" font="ZoFontGameBold" maxInputCharacters="20">
+                        <EditBox name="$(parent)TextField" inherits="ZO_DefaultEditForBackdrop" font="ZoFontGameBold" maxInputCharacters="25">
                             <OnTextChanged>
-                                if self:GetText() then
-                                    updateBidderFromField(self)
-                                end
+                                updateBidderFromField(self)
                             </OnTextChanged>
                         </EditBox>
                     </Controls>

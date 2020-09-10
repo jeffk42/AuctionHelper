@@ -1,16 +1,7 @@
 <GuiXml>
     <Controls>
-        <TopLevelControl name="AuctionHelperDataWindow" movable="true" mouseEnabled="true" clampedToScreen="true" hidden="true" resizeHandleSize="8" tier="MEDIUM">
+        <TopLevelControl name="AuctionHelperDataWindow" movable="true" mouseEnabled="true" clampedToScreen="true" hidden="true" resizeHandleSize="0" tier="MEDIUM">
             <OnUpdate>
-                local w, h = self:GetDimensions()
-                if ((self.currentWidth ~= w) or (self.currentHeight ~= h)) then
-                self.currentWidth = w
-                self.currentHeight = h
-                if(self.onResize) then
-                    self.onResize()
-                end
-                end
-
             </OnUpdate>
             <Anchor point="BOTTOM" relativeTo="GuiRoot" relativePoint="BOTTOM" offsetX="0" offsetY="-128"/>
             <Dimensions x="512" y="425" />
@@ -25,7 +16,7 @@
                     <Dimensions x="48" y="48" />
                     <Textures normal="/esoui/art/hud/radialicon_cancel_up.dds" mouseOver="/esoui/art/hud/radialicon_cancel_over.dds" />
                     <OnClicked>
-                    AuctionHelperDataWindow:SetHidden(true)
+                        AuctionHelperDataWindow:SetHidden(true)
                     </OnClicked>
                 </Button>
                 <Backdrop name="$(parent)Body1" inherits="ZO_EditBackdrop">
