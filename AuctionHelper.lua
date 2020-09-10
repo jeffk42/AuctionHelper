@@ -1,4 +1,9 @@
--- First, we create a namespace for our addon by declaring a top-level table that will hold everything else.
+-- AuctionHelper is designed to streamline in-game auction calling in
+-- Elder Scrolls Online. Its application is pretty specific to one guild,
+-- although any guild willing to adjust their process a bit to match
+-- (or modify this code to meet their needs) could find it useful.
+-- Author: @jeffk42
+
 AuctionHelper = {}
 AuctionHelper.variableVersion = 1
 AuctionHelper.savedVariables = {}
@@ -8,24 +13,46 @@ AuctionHelper.Default = {
 }
 local AuctionHelperData = {}
 local currentIndex = 1
+-- The expected format of the source data. Our guild has a Google Sheets document updated
+-- for the auction each week, and the data for the add-on is populated by exporting
+-- the sheet as a CSV that matches the regex below.
 local csvRegex = "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]"
+-- Tab-delimited version not currently used because while it would be easier, EditBox
+-- doesn't understand tabs. 
 local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
-local AuctionHelperBuffer = nil
-local copyBufferList = {}
+-- Lua doesn't seem to have a string.trim() equivalent, or I just never found it. So
+-- this will do the same thing.
+local stringTrimRegex = "^[%s]*(.-)[%s]*$"
+-- Some fields may have unnecessary whitespace between words.
+local stripExtraSpaceRegex = "[ \t]+"
+
+-- Other assorted formats for things, including the actual chat messages generated for auction calling.
+local lotListFormat = "%d: %s"
+local wordsRegex = "[a-zA-Z ]+"
+local goingOnceMessage = "%s going once!"
+local goingTwiceMessage = "%s going twice!"
+local soldMessage = "SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!"
+local lastCallMessage = "%s is the current top bid, any other bids?"
+local lastCallEstimatedMessage = "%s is the current top bid, estimated value is %s, any other bids?"
+local currentLotMessage = "==== Lot #%d: %s ===="
+local startingBidMessage = "<<< Starting bid for this lot: %s >>>"
+local startingBidFlashMessage = "FLASH LOT! Estimated value: %s. Wait for the GO, and you have 30 SECONDS to bid. Highest bid when I say STOP gets the lot!"
+-- held temporarily for if I decide to try to parse bids directly from the chat window.
+-- local AuctionHelperBuffer = nil
+-- local copyBufferList = {}
 
  
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
  
--- Then we create an event handler function which will be called when the "addon loaded" event
--- occurs. We'll use this to initialize our addon after all of its resources are fully loaded.
+-- Load add-on resources
 function AuctionHelper.OnAddOnLoaded(event, addonName)
-  -- The event fires each time *any* addon loads - but we only care about when our own addon loads.
   if addonName == AuctionHelper.name then
     AuctionHelper:Initialize()
   end
 end
 
+-- Sets the winner for the current lot and updated the control window fields
 local function setCurrentWinner(rawName)
   AuctionHelperData[currentIndex].winner = rawName
   AuctionHelper.savedVariables.AuctionHelperData[currentIndex].winner = rawName
@@ -33,18 +60,20 @@ local function setCurrentWinner(rawName)
   updateWindowFields()
 end
 
+-- Adds a context menu option to usernames in chat that populates the winner field
+-- in the control window so you don't have to type it out.
 function SetWinnerContextMenu(playerData, rawName)
   AddCustomMenuItem("Set Current Winner", function() setCurrentWinner(rawName) end)  
   ShowMenu()
 end
 
+-- Restores the last used data on login or reload
 local function RestoreSavedLotData()
   AuctionHelperControlWindowLotList.m_comboBox:ClearItems()
   local ind = 1
-  d("ind" .. ind)
   while AuctionHelperData[ind] do
     local tmpIndx = ind
-    local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", ind, AuctionHelperData[ind].title), function() AuctionHelper.FireSelectionChanged(tmpIndx) end )
+    local itemEntry = ZO_ComboBox:CreateItemEntry(string.format(lotListFormat, ind, AuctionHelperData[ind].title), function() AuctionHelper.FireSelectionChanged(tmpIndx) end )
     AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
     ind = ind + 1
   end
@@ -53,6 +82,7 @@ local function RestoreSavedLotData()
   AuctionHelperControlWindowBidderBoxTextField:SetText(AuctionHelperData[currentIndex].winner)
 end
 
+-- Triggered from the Update button, reloads the data pasted from the CSV file
 function AuctionHelperDataField_OnTextChanged (self)
   s = AuctionHelperDataWindowBody1Field:GetText()
   if (string.len(s) < 1) then
@@ -66,18 +96,18 @@ function AuctionHelperDataField_OnTextChanged (self)
       local inum = tonumber(index)
       AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid=""}
       -- Trim the edges of the title
-      title = string.match(title, "^[%s]*(.-)[%s]*$")
-      est = string.match(est, "^[%s]*(.-)[%s]*$")
-      st = string.match(st, "^[%s]*(.-)[%s]*$")
+      title = string.match(title, stringTrimRegex)
+      est = string.match(est, stringTrimRegex)
+      st = string.match(st, stringTrimRegex)
       -- Reduce extra whitespace
-      title = string.gsub(title, "[ \t]+", " ")
+      title = string.gsub(title, stripExtraSpaceRegex, " ")
       AuctionHelperData[inum].index = inum
       AuctionHelperData[inum].title = title
       AuctionHelperData[inum].estimated = est
       AuctionHelperData[inum].start = st
       AuctionHelperData[inum].winner = ""
       AuctionHelperData[inum].winbid = ""
-      local itemEntry = ZO_ComboBox:CreateItemEntry(string.format("%d: %s", inum, title), function() AuctionHelper.FireSelectionChanged(inum) end )
+      local itemEntry = ZO_ComboBox:CreateItemEntry(string.format(lotListFormat, inum, title), function() AuctionHelper.FireSelectionChanged(inum) end )
       AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
   end
   selectLotItem(AuctionHelperData[1])
@@ -116,7 +146,7 @@ end
 -- Used to change the color of non-numeric labels to red,
 -- and numeric labels to green.
 function LabelUpdate(label)
-  if (string.match(label:GetText(), "[a-zA-Z ]+")) then
+  if (string.match(label:GetText(), wordsRegex)) then
     label:SetColor(1, 0.6, 0.6, 1)
   else
     label:SetColor(0.7, 1, 0.7, 1)
@@ -137,9 +167,9 @@ end
 
 function updateWindowFields()
   AuctionHelperControlWindowLotNumLabel:SetText(string.format("#%d", currentIndex))
-  AuctionHelperControlWindowLotNameLabel:SetText(string.format("%s", AuctionHelperData[currentIndex].title))
-  AuctionHelperControlWindowEstimatedLabel:SetText(string.format("%s", AuctionHelperData[currentIndex].estimated))
-  AuctionHelperControlWindowMinimumLabel:SetText(string.format("%s",AuctionHelperData[currentIndex].start))
+  AuctionHelperControlWindowLotNameLabel:SetText(AuctionHelperData[currentIndex].title))
+  AuctionHelperControlWindowEstimatedLabel:SetText(AuctionHelperData[currentIndex].estimated)
+  AuctionHelperControlWindowMinimumLabel:SetText(AuctionHelperData[currentIndex].start)
   AuctionHelperControlWindowCurrentBidderLabel:SetText(AuctionHelperData[currentIndex].winner)
   AuctionHelperControlWindowCurrentBidLabel:SetText(AuctionHelperData[currentIndex].winbid)
 end
@@ -152,26 +182,26 @@ function setCurrentHighBid(value)
 end
 
 function stageGoingOnce()
-  StartChatInput(string.format("%s going once!", AuctionHelperData[currentIndex].winbid))
+  StartChatInput(string.format(goingOnceMessage, AuctionHelperData[currentIndex].winbid))
 end
 
 function stageGoingTwice()
-  StartChatInput(string.format("%s going twice!", AuctionHelperData[currentIndex].winbid))
+  StartChatInput(string.format(goingTwiceMessage, AuctionHelperData[currentIndex].winbid))
 end
 
 function stageSoldMessage()
-  StartChatInput(string.format("SOLD to %s for %s! Congrats! Please MAIL your winning bid to @AKTT-auction as soon as possible so we can get your item(s) sent out promptly!", AuctionHelperData[currentIndex].winner, AuctionHelperData[currentIndex].winbid))
+  StartChatInput(string.format(soldMessage, AuctionHelperData[currentIndex].winner, AuctionHelperData[currentIndex].winbid))
 end
 
 function stageNewLot()
-  StartChatInput(string.format("==== Lot #%d: %s ====", currentIndex, AuctionHelperData[currentIndex].title))
+  StartChatInput(string.format(currentLotMessage, currentIndex, AuctionHelperData[currentIndex].title))
 end
 
 function stageStartingBid()
   if (string.lower(AuctionHelperData[currentIndex].start) == "flash") then
-    StartChatInput(string.format("FLASH LOT! Estimated value: %s. Wait for the GO, and you have 30 SECONDS to bid. Highest bid when I say STOP gets the lot!", AuctionHelperData[currentIndex].estimated))
+    StartChatInput(string.format(startingBidFlashMessage, AuctionHelperData[currentIndex].estimated))
   else
-    StartChatInput(string.format("<<< Starting bid for this lot: %s >>>", AuctionHelperData[currentIndex].start))
+    StartChatInput(string.format(startingBidMessage, AuctionHelperData[currentIndex].start))
   end
 end
 
@@ -188,11 +218,11 @@ function setNewEstimatedValue(num)
 end
 
 function stageLastCallWithEstimated()
-  StartChatInput(string.format("%s is the current top bid, estimated value is %s, any other bids?", AuctionHelperData[currentIndex].winbid, AuctionHelperData[currentIndex].estimated))
+  StartChatInput(string.format(lastCallEstimatedMessage, AuctionHelperData[currentIndex].winbid, AuctionHelperData[currentIndex].estimated))
 end
 
 function stageLastCall()
-  StartChatInput(string.format("%s is the current top bid, any other bids?", AuctionHelperData[currentIndex].winbid))
+  StartChatInput(string.format(lastCallMessage, AuctionHelperData[currentIndex].winbid))
 end
 
 function AuctionHelper:ConsoleCommands()
@@ -288,11 +318,11 @@ function AuctionHelper:ConsoleCommands()
     end
 end
 
-local function CreateCopyBuffer(buffer)
-  local copyBuffer = CircularBuffer:New(buffer:GetMaxHistoryLines())
-  table.insert(copyBufferList, copyBuffer)
-  return #copyBufferList
-end
+-- local function CreateCopyBuffer(buffer)
+--   local copyBuffer = CircularBuffer:New(buffer:GetMaxHistoryLines())
+--   table.insert(copyBufferList, copyBuffer)
+--   return #copyBufferList
+-- end
 
 -- Initialize function
 function AuctionHelper:Initialize()
@@ -326,7 +356,7 @@ function AuctionHelper:Initialize()
 end
 
 -- maybe can remove?
-AuctionHelper.copyBufferList = copyBufferList
+-- AuctionHelper.copyBufferList = copyBufferList
 
 -- Finally, we'll register our event handler function to be called when the proper event occurs.
 EVENT_MANAGER:RegisterForEvent(AuctionHelper.name, EVENT_ADD_ON_LOADED, AuctionHelper.OnAddOnLoaded)
