@@ -126,9 +126,6 @@ end
 function updateHighBidFromField(field)
   if (field:GetText() ~= nil) then
     setCurrentHighBid(field:GetText())
-    -- AuctionHelperData[currentIndex].winbid = field:GetText()
-    -- AuctionHelper.savedVariables.AuctionHelperData[currentIndex].winbid = field:GetText()
-    -- d(string.format("-- Current top bid set to %s --", AuctionHelperData[currentIndex].winbid))
   end
 end
 
@@ -145,7 +142,6 @@ function updateWindowFields()
   AuctionHelperControlWindowMinimumLabel:SetText(string.format("%s",AuctionHelperData[currentIndex].start))
   AuctionHelperControlWindowCurrentBidderLabel:SetText(AuctionHelperData[currentIndex].winner)
   AuctionHelperControlWindowCurrentBidLabel:SetText(AuctionHelperData[currentIndex].winbid)
-  -- AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
 function setCurrentHighBid(value)

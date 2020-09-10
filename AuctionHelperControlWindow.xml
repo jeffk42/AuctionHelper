@@ -30,21 +30,24 @@
                 </Button>
                 <Control name="$(parent)LotList" inherits="ZO_ComboBox">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="8" />
-                    <!-- <Anchor point="BOTTOMRIGHT" offsetY="-40" offsetX="-3" /> -->
                     <Dimensions x="400" />
                     <OnInitialized>
                         ZO_ComboBox:New(self)
                     </OnInitialized>
                 </Control>
-                <Button name="$(parent)ShowLotButton" inherits="ZO_DefaultButton" text="Stage Up Lot Post">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)LotList" relativePoint="BOTTOMLEFT"
-                        offsetY="12" offsetX="0" />
+                <Label name="$(parent)StageLabel" font="ZoFontHeader3" color="CFDCBD" wrapMode="ELLIPSIS"
+                    verticalAlignment="CENTER" text="Chat Staging:">
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)LotList" relativePoint="BOTTOMLEFT" offsetX="40" offsetY="8"/>
+                </Label>
+                <Button name="$(parent)ShowLotButton" inherits="ZO_DefaultButton" text="Current Lot Start">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)StageLabel" relativePoint="BOTTOMLEFT"
+                        offsetY="12" offsetX="-40" />
                     <Dimensions x="250" />
                     <OnClicked>
                         stageNewLot()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)StartBidButton" inherits="ZO_DefaultButton" text="Stage Up Starting Bid">
+                <Button name="$(parent)StartBidButton" inherits="ZO_DefaultButton" text="Starting Bid">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)ShowLotButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
@@ -52,7 +55,7 @@
                         stageStartingBid()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)LastCallButton" inherits="ZO_DefaultButton" text="Stage Up Last Call">
+                <Button name="$(parent)LastCallButton" inherits="ZO_DefaultButton" text="Last Call">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)StartBidButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
@@ -60,7 +63,7 @@
                         stageLastCall()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)LastCallEstButton" inherits="ZO_DefaultButton" text="Stage Up Last Call (Est)">
+                <Button name="$(parent)LastCallEstButton" inherits="ZO_DefaultButton" text="Last Call w/ Estimated">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)LastCallButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
@@ -68,7 +71,7 @@
                         stageLastCallWithEstimated()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)GoingOnceButton" inherits="ZO_DefaultButton" text="Stage Up Going Once">
+                <Button name="$(parent)GoingOnceButton" inherits="ZO_DefaultButton" text="Going Once">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)LastCallEstButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" text="Stage Up Going Once" />
                     <Dimensions x="250" />
@@ -76,7 +79,7 @@
                         stageGoingOnce()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)GoingTwiceButton" inherits="ZO_DefaultButton" text="Stage Up Going Twice">
+                <Button name="$(parent)GoingTwiceButton" inherits="ZO_DefaultButton" text="Going Twice">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)GoingOnceButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
@@ -84,7 +87,7 @@
                         stageGoingTwice()
                     </OnClicked>
                 </Button>
-                <Button name="$(parent)SoldButton" inherits="ZO_DefaultButton" text="Stage Up Sold">
+                <Button name="$(parent)SoldButton" inherits="ZO_DefaultButton" text="Lot Sold">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)GoingTwiceButton" relativePoint="BOTTOMLEFT"
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
@@ -94,7 +97,7 @@
                 </Button>
                 <Label name="$(parent)HighBidEntryLabel" font="ZoFontHeader2" color="CFDCBD" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="Set High Bid: ">
-                   <Anchor point="TOPLEFT" relativeTo="$(parent)ShowLotButton" relativePoint="TOPRIGHT" offsetX="16" offsetY="0"/>
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)ShowLotButton" relativePoint="TOPRIGHT" offsetX="26" offsetY="0"/>
                 </Label>
                 <Backdrop name="$(parent)CurrentBidBox" inherits="ZO_EditBackdrop">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)HighBidEntryLabel" relativePoint="TOPRIGHT" offsetY="0" offsetX="10" />
