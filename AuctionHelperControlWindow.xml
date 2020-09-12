@@ -1,17 +1,6 @@
 <GuiXml>
     <Controls>
         <TopLevelControl name="AuctionHelperControlWindow" movable="true" mouseEnabled="true" clampedToScreen="true" hidden="true" resizeHandleSize="0" tier="MEDIUM">
-            <OnUpdate>
-                <!-- local w, h = self:GetDimensions()
-                if ((self.currentWidth ~= w) or (self.currentHeight ~= h)) then
-                self.currentWidth = w
-                self.currentHeight = h
-                if(self.onResize) then
-                    self.onResize()
-                end
-                end -->
-
-            </OnUpdate>
             <Anchor point="LEFT" relativeTo="AuctionHelperDataWindow" relativePoint="RIGHT" offsetX="15" offsetY="0"/>
             <Dimensions x="640" y="420" />
             <Controls>
@@ -28,16 +17,10 @@
                     AuctionHelperControlWindow:SetHidden(true)
                     </OnClicked>
                 </Button>
-                <Control name="$(parent)LotList" inherits="ZO_ComboBox">
-                    <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="8" />
-                    <Dimensions x="400" />
-                    <OnInitialized>
-                        ZO_ComboBox:New(self)
-                    </OnInitialized>
-                </Control>
+                
                 <Label name="$(parent)StageLabel" font="ZoFontHeader3" color="CFDCBD" wrapMode="ELLIPSIS"
                     verticalAlignment="CENTER" text="Chat Staging:">
-                   <Anchor point="TOPLEFT" relativeTo="$(parent)LotList" relativePoint="BOTTOMLEFT" offsetX="55" offsetY="8"/>
+                   <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetX="55" offsetY="45"/>
                 </Label>
                 <Button name="$(parent)ShowLotButton" inherits="ZO_DefaultButton" text="Current Lot Start">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)StageLabel" relativePoint="BOTTOMLEFT"
@@ -182,6 +165,21 @@
                     verticalAlignment="CENTER" text="">
                    <Anchor point="LEFT" relativeTo="$(parent)CurrentBidTitleLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
                 </Label>
+                <Control name="$(parent)LotList" inherits="ZO_ScrollableComboBox">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="8" />
+                    <Dimensions x="400" />
+                    <OnInitialized>
+                        ZO_ScrollableComboBox:New(self)
+                    </OnInitialized>
+                </Control>
+                <Button name="$(parent)NextButton" inherits="ZO_DefaultButton" text="Load Next">
+                    <Anchor point="LEFT" relativeTo="$(parent)LotList" relativePoint="RIGHT"
+                        offsetY="0" offsetX="10" />
+                    <Dimensions x="150" />
+                    <OnClicked>
+                        HandleNextButton()
+                    </OnClicked>
+                </Button>
             </Controls>
         </TopLevelControl>
     </Controls>

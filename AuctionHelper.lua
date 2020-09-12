@@ -16,7 +16,8 @@ local currentIndex = 1
 -- The expected format of the source data. Our guild has a Google Sheets document updated
 -- for the auction each week, and the data for the add-on is populated by exporting
 -- the sheet as a CSV that matches the regex below.
-local csvRegex = "^(%d+),(.-),[\"\$]*(.-)[\"]*,\"\$.-\",[\"\$]*(.-[,%d]*)[\"]*,.-[\n]"
+local csvRegex = "^(%d+),(.-),[\"%$]*(.-)[\"]*,\"%$.-\",[\"%$]*(%w+,?%w+)[\"]*,.-[\n]"
+-- (.-[,%d]*)
 -- Tab-delimited version not currently used because while it would be easier, EditBox
 -- doesn't understand tabs. 
 local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
@@ -45,15 +46,6 @@ local startingBidFlashMessage = "FLASH LOT! Estimated value: %s. Wait for the GO
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
 
-local function changeLot(newLotNumber)
-  if (AuctionHelperData[newLotNumber] ~= nil) then
-    currentIndex = newLotNumber
-    AuctionHelper.savedVariables.currentIndex = currentIndex
-  else
-    d("ERROR: chosen lot number doesn't exist")
-  end
-end
-
 local function updateWindowFields()
   AuctionHelperControlWindowLotNumLabel:SetText(string.format("#%d", currentIndex))
   AuctionHelperControlWindowLotNameLabel:SetText(AuctionHelperData[currentIndex].title)
@@ -61,6 +53,20 @@ local function updateWindowFields()
   AuctionHelperControlWindowMinimumLabel:SetText(AuctionHelperData[currentIndex].start)
   AuctionHelperControlWindowCurrentBidderLabel:SetText(AuctionHelperData[currentIndex].winner)
   AuctionHelperControlWindowCurrentBidLabel:SetText(AuctionHelperData[currentIndex].winbid)
+end
+
+local function updateSelectMenu()
+  AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[currentIndex])
+end
+
+local function changeLot(newLotNumber)
+  if (AuctionHelperData[newLotNumber] ~= nil) then
+    currentIndex = newLotNumber
+    AuctionHelper.savedVariables.currentIndex = currentIndex
+    updateWindowFields()
+  else
+    d("ERROR: chosen lot number doesn't exist")
+  end
 end
 
 local function setNewStartingBid(num)
@@ -88,7 +94,6 @@ local function fireSelectionChanged(theNewLot)
     return
   end
   changeLot(theNewLot)
-  updateWindowFields()
   updateBidTextField()
   updateBidderTextField()
 end
@@ -114,7 +119,6 @@ local function setCurrentHighBid(value, fromTextField)
     if (not fromTextField) then
       updateBidTextField()
     end
-    d(string.format("-- Current top bid set to %s --", AuctionHelperData[currentIndex].winbid))
   end
 end
 
@@ -124,8 +128,7 @@ local function selectLotItem(theNewLot)
   end
   d(string.format("item selected: %s", theNewLot.title))
   changeLot(theNewLot.index)
-  updateWindowFields()
-  AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[currentIndex])
+  updateSelectMenu()
 end
 
 -- Adds a context menu option to usernames in chat that populates the winner field
@@ -180,6 +183,14 @@ function AuctionHelperDataField_OnTextChanged (self)
   end
   selectLotItem(AuctionHelperData[1])
   AuctionHelper.savedVariables.AuctionHelperData = AuctionHelperData
+end
+
+function HandleNextButton()
+  local newIndex = currentIndex + 1
+  if (AuctionHelperData[newIndex] ~= nil) then
+    changeLot(newIndex)
+    updateSelectMenu()
+  end
 end
 
 -- Used to change the color of non-numeric labels to red,
@@ -312,10 +323,12 @@ function AuctionHelper:ConsoleCommands()
             if (string.len(user) > 0) then
               if (string.lower(user) == "next") then
                 changeLot(currentIndex + 1)
+                updateSelectMenu()
               else
                 local newIndex = tonumber(user)
                 if (newIndex > 0) then
                   changeLot(newIndex)
+                  updateSelectMenu()
                 end
               end
               if (AuctionHelperData[currentIndex] ~= nil) then
