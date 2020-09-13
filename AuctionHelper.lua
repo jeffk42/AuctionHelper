@@ -17,6 +17,7 @@ local currentIndex = 1
 -- for the auction each week, and the data for the add-on is populated by exporting
 -- the sheet as a CSV that matches the regex below.
 local csvRegex = "^(%d+),(.-),[\"%$]*(.-)[\"]*,\"%$.-\",[\"%$]*(%w+,?%w+)[\"]*,.-[\n]"
+local csvRegexWithItems = "^(%d+),(.-),(.-),.-,(.-),(.-),(.-),(.-),(.-),(.-),(.-),(.-),(.-),(.-),.-[\n]"
 -- Tab-delimited version not currently used because while it would be easier, EditBox
 -- doesn't understand tabs. 
 local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
@@ -162,6 +163,15 @@ local function RestoreSavedLotData()
   AuctionHelperControlWindowBidderBoxTextField:SetText(AuctionHelperData[currentIndex].winner)
 end
 
+function HandleUpdateClicked(self, useItems)
+  d(useItems)
+  if useItems then
+    AuctionHelperDataField_OnTextChanged_WithItems (self)
+  else
+    AuctionHelperDataField_OnTextChanged (self)
+  end
+end
+
 -- Triggered from the Update button, reloads the data pasted from the CSV file
 function AuctionHelperDataField_OnTextChanged (self)
   s = AuctionHelperDataWindowBody1Field:GetText()
@@ -174,19 +184,55 @@ function AuctionHelperDataField_OnTextChanged (self)
   
   for index, title, est, st in string.gmatch( s, csvRegex ) do
       local inum = tonumber(index)
-      AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid=""}
-      -- Trim the edges of the title
-      title = string.match(title, stringTrimRegex)
-      est = string.match(est, stringTrimRegex)
-      st = string.match(st, stringTrimRegex)
-      -- Reduce extra whitespace
-      title = string.gsub(title, stripExtraSpaceRegex, " ")
+      AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid="" }
+      -- trim edges and Reduce extra whitespace
+
       AuctionHelperData[inum].index = inum
-      AuctionHelperData[inum].title = title
-      AuctionHelperData[inum].estimated = est
-      AuctionHelperData[inum].start = st
+      AuctionHelperData[inum].title = string.gsub(string.match(title, stringTrimRegex), stripExtraSpaceRegex, " ")
+      AuctionHelperData[inum].estimated = string.match(est, stringTrimRegex)
+      AuctionHelperData[inum].start = string.match(st, stringTrimRegex)
       AuctionHelperData[inum].winner = ""
       AuctionHelperData[inum].winbid = ""
+      
+      local itemEntry = ZO_ComboBox:CreateItemEntry(string.format(lotListFormat, inum, title), function() fireSelectionChanged(inum) end )
+      AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
+  end
+  selectLotItem(AuctionHelperData[1])
+  AuctionHelper.savedVariables.AuctionHelperData = AuctionHelperData
+end
+
+function AuctionHelperDataField_OnTextChanged_WithItems (self)
+  s = AuctionHelperDataWindowBody1Field:GetText()
+  if (string.len(s) < 1) then
+    return
+  end
+
+  AuctionHelperData = {}
+  AuctionHelperControlWindowLotList.m_comboBox:ClearItems()
+  
+  for index, title, est, st, f, g, h, i, j, k, l, m, n in string.gmatch( s, csvRegexWithItems ) do
+      local inum = tonumber(index)
+      AuctionHelperData[inum] = {index = 0, title="", estimated="", start="", winner="", winbid="", items={}}
+      -- trim edges and Reduce extra whitespace
+
+      AuctionHelperData[inum].index = inum
+      AuctionHelperData[inum].title = string.gsub(string.match(title, stringTrimRegex), stripExtraSpaceRegex, " ")
+      AuctionHelperData[inum].estimated = string.match(est, stringTrimRegex)
+      AuctionHelperData[inum].start = string.match(st, stringTrimRegex)
+      AuctionHelperData[inum].winner = ""
+      AuctionHelperData[inum].winbid = ""
+      -- for itemIndex = 1, 9 do
+        AuctionHelperData[inum].items[1] = string.match(f, stringTrimRegex)
+      -- end
+      AuctionHelperData[inum].items[2] = string.match(g, stringTrimRegex)
+      AuctionHelperData[inum].items[3] = string.match(h, stringTrimRegex)
+      AuctionHelperData[inum].items[4] = string.match(i, stringTrimRegex)
+      AuctionHelperData[inum].items[5] = string.match(j, stringTrimRegex)
+      AuctionHelperData[inum].items[6] = string.match(k, stringTrimRegex)
+      AuctionHelperData[inum].items[7] = string.match(l, stringTrimRegex)
+      AuctionHelperData[inum].items[8] = string.match(m, stringTrimRegex)
+      AuctionHelperData[inum].items[9] = string.match(n, stringTrimRegex)
+      
       local itemEntry = ZO_ComboBox:CreateItemEntry(string.format(lotListFormat, inum, title), function() fireSelectionChanged(inum) end )
       AuctionHelperControlWindowLotList.m_comboBox:AddItem(itemEntry)
   end

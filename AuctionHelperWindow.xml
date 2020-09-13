@@ -23,10 +23,13 @@
                     <Anchor point="TOPLEFT" relativeTo="$(parent)Heading" relativePoint="BOTTOMLEFT" offsetY="10" offsetX="-2" />
                     <Dimensions y="325" x="485" />
                     <Controls>
-                        <EditBox name="$(parent)Field" inherits="ZO_DefaultEditMultiLineForBackdrop" font="ZoFontGameBold" maxInputCharacters="20000">
-                            <OnTextChanged>
-                                
-                            </OnTextChanged>
+                        <EditBox name="$(parent)Field" inherits="ZO_DefaultEditMultiLineForBackdrop ZO_EditDefaultText" font="ZoFontGameBold" maxInputCharacters="90000" >
+                            <OnInitialized>
+								ZO_EditDefaultText_Initialize(self, GetString("Default Text"))
+							</OnInitialized>
+							<OnEffectivelyShown>
+								self:TakeFocus()
+							</OnEffectivelyShown>
                         </EditBox>
                     </Controls>
                 </Backdrop>
@@ -35,8 +38,14 @@
                         offsetY="12" offsetX="0" />
                     <Dimensions x="250" />
                     <OnClicked>
-                        AuctionHelperDataField_OnTextChanged(AuctionHelperDataWindowBody1Field)
+                        HandleUpdateClicked(AuctionHelperDataWindowBody1Field, ZO_CheckButton_IsChecked(AuctionHelperDataWindowUpdateTypeCheckbox))
                     </OnClicked>
+                </Button>
+                <Button name="$(parent)UpdateTypeCheckbox" inherits="ZO_CheckButton">
+                    <Anchor point ="LEFT" relativeTo="$(parent)UpdateButton" relativePoint="RIGHT" offsetX="10" />
+                    <OnInitialized>
+                        ZO_CheckButton_SetLabelText(self, "Look For Items in CSV")
+                    </OnInitialized>
                 </Button>
             </Controls>
         </TopLevelControl>
