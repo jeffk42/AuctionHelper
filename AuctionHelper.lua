@@ -17,7 +17,6 @@ local currentIndex = 1
 -- for the auction each week, and the data for the add-on is populated by exporting
 -- the sheet as a CSV that matches the regex below.
 local csvRegex = "^(%d+),(.-),[\"%$]*(.-)[\"]*,\"%$.-\",[\"%$]*(%w+,?%w+)[\"]*,.-[\n]"
--- (.-[,%d]*)
 -- Tab-delimited version not currently used because while it would be easier, EditBox
 -- doesn't understand tabs. 
 local tsvRegex = "^(%d+)\t(.-)\t[\"\$]*(.-)[\"]*\t\"\$.-\"\t[\"\$]*(.-)[\"]*\t.-[\n]"
@@ -46,6 +45,7 @@ local startingBidFlashMessage = "FLASH LOT! Estimated value: %s. Wait for the GO
 -- Add-on name for registering events
 AuctionHelper.name = "AuctionHelper"
 
+-- Updates the summary text section of the window to match current lot values.
 local function updateWindowFields()
   AuctionHelperControlWindowLotNumLabel:SetText(string.format("#%d", currentIndex))
   AuctionHelperControlWindowLotNameLabel:SetText(AuctionHelperData[currentIndex].title)
@@ -55,10 +55,13 @@ local function updateWindowFields()
   AuctionHelperControlWindowCurrentBidLabel:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
+-- if a new lot is selected via a means other than the pull-down menu (like using a chat command),
+-- update the selected item in the pull-down menu to match.
 local function updateSelectMenu()
   AuctionHelperControlWindowLotList.m_comboBox:SelectItem(AuctionHelperControlWindowLotList.m_comboBox:GetItems()[currentIndex])
 end
 
+-- Change the current lot to the lot at the index specified.
 local function changeLot(newLotNumber)
   if (AuctionHelperData[newLotNumber] ~= nil) then
     currentIndex = newLotNumber
@@ -69,22 +72,28 @@ local function changeLot(newLotNumber)
   end
 end
 
+-- Set the value of the starting bid for the current lot.
 local function setNewStartingBid(num)
   AuctionHelperData[currentIndex].start = num
   AuctionHelper.savedVariables.AuctionHelperData[currentIndex].start = num
   updateWindowFields()
 end
 
+-- Set the value of the estimated value for the current lot.
 local function setNewEstimatedValue(num)
   AuctionHelperData[currentIndex].estimated = num
   AuctionHelper.savedVariables.AuctionHelperData[currentIndex].start = num
   updateWindowFields()
 end
 
+-- When the current high bid is changed via a method other than the text field (such as by chat command),
+-- update the text field to match.
 local function updateBidTextField()
   AuctionHelperControlWindowCurrentBidBoxTextField:SetText(AuctionHelperData[currentIndex].winbid)
 end
 
+-- When the current high bid is changed via a method other than the text field (such as by chat command),
+-- update the text field to match.
 local function updateBidderTextField()
   AuctionHelperControlWindowBidderBoxTextField:SetText(AuctionHelperData[currentIndex].winner)
 end
